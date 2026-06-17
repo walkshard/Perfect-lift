@@ -1,14 +1,3 @@
-﻿Sharing with Contacts
-The app already does exactly this. I designed it using Firebase Anonymous Authentication and secure database rules.
-When you send your perfect-lift.vercel.app link to a friend, their phone generates a unique, anonymous User ID in the background. Firebase automatically creates a completely isolated data silo for them. They will see the default Zombie Apocalypse routines, but they will not see your custom exercises, your history, or your API key.
-Note: Because it is anonymous authentication, if your friend clears their phone's browser cache, they will lose their data. If they want permanent accounts, we would need to add an email/password login screen later.
-Adding Features: Single File vs. Multiple Files
-For professional software development, keeping everything in one file is bad practice. You normally split the code into an index.html file, a styles.css file, and an app.js file (and often many smaller component files).
-However, because you are doing this entirely from a mobile phone browser, splitting the files makes the workflow miserable. You would have to flip back and forth between different tabs in GitHub, figure out which file broke when a bug occurs, and deal with browser caching issues.
-For mobile-only development, a single-file architecture is the right move until the app becomes too large for your clipboard.
-The Plate Calculator Upgrade
-I have added a state variable for the bar weight and updated the modal to include quick-select buttons for standard bars, including a 65lb option for your trap bar deadlifts.
-Delete everything in your index.html and paste this updated version:
 <!DOCTYPE html>
 <html lang="en">
 <head>
