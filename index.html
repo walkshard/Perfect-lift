@@ -1,12 +1,4 @@
-﻿That "flash to blank" happened because the app loaded the default Zombie Apocalypse routine instantly, but then Firebase connected a split-second later. Firebase saw you were a new user with an empty database, so it overwrote your screen with its empty data.
-I have fixed the sync logic so that new users permanently save the default routines to their cloud profile on the first load, preventing the overwrite.
-Since you want the best web-based lifting app ever that runs perfectly on a mobile browser, I added three massive upgrades:
-1. Crash Recovery (Local State Preservation): The app now saves your active workout to your phone's localStorage after every single tap. If your mobile browser accidentally refreshes, you close the tab, or your phone dies mid-workout, you will lose nothing. It will be exactly as you left it.
-2. Mobile Viewport Fix: I changed the CSS height from 100vh to 100dvh (Dynamic Viewport Height). This prevents the app's bottom navigation bar from hiding under your phone's browser address bar when scrolling.
-3. Plate Math Calculator: Tap the new [ 🍽️ ] button next to any exercise during a workout, enter the target weight, and it will instantly tell you exactly which plates to load on each side of a standard 45lb barbell.
-4. Workout Notes: You can now add text notes to individual workouts to track how you felt or specific machine settings used.
-Here is the fully upgraded, crash-proof, mobile-optimized file. Delete everything in your current index.html and paste this:
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
    <meta charset="UTF-8">
