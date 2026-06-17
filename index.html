@@ -1,0 +1,290 @@
+html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Perfect Lift</title>
+    <style>
+        :root {
+            --bg: #111827; --surface: #1f2937; --surface-light: #374151;
+            --primary: #2563eb; --primary-active: #1d4ed8;
+            --success: #16a34a; --danger: #dc2626; --text: #f3f4f6; --text-muted: #9ca3af;
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; overscroll-behavior-y: none; }
+        input, select, textarea { font-family: inherit; font-size: 16px; background: var(--surface-light); color: var(--text); border: none; border-radius: 8px; padding: 12px; width: 100%; outline: none; }
+        input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 2px var(--primary); }
+        button { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 16px; }
+        button:active { background: var(--primary-active); }
+        button.ghost { background: transparent; color: var(--primary); width: auto; padding: 8px; }
+        button.danger { background: var(--danger); width: auto; padding: 8px; }
+        button.success { background: var(--success); }
+        button.secondary { background: var(--surface-light); color: var(--text); }
+        
+        #app-container { display: flex; flex-direction: column; height: 100vh; max-width: 500px; margin: 0 auto; position: relative; background: var(--bg); }
+        .content { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 80px; }
+        .card { background: var(--surface); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+        
+        .flex { display: flex; } .flex-col { display: flex; flex-direction: column; }
+        .justify-between { justify-content: space-between; } .items-center { align-items: center; } .gap-2 { gap: 8px; } .gap-4 { gap: 16px; }
+        .mt-2 { margin-top: 8px; } .mt-4 { margin-top: 16px; } .mb-2 { margin-bottom: 8px; } .mb-4 { margin-bottom: 16px; }
+        .text-sm { font-size: 0.875rem; } .text-xs { font-size: 0.75rem; } .font-bold { font-weight: bold; }
+        .text-muted { color: var(--text-muted); } .text-primary { color: var(--primary); }
+        
+        .grid-sets { display: grid; grid-template-columns: 40px 1fr 1fr 1fr 40px; gap: 8px; align-items: center; margin-bottom: 8px; }
+        .grid-sets input { padding: 8px 4px; text-align: center; }
+        
+        /* Bottom Nav */
+        .nav { position: absolute; bottom: 0; left: 0; right: 0; background: var(--surface); display: flex; padding-bottom: var(--safe-bottom); border-top: 1px solid var(--surface-light); z-index: 40; }
+        .nav-btn { flex: 1; background: transparent; flex-direction: column; color: var(--text-muted); padding: 12px 0; border-radius: 0; gap: 4px; }
+        .nav-btn.active { color: var(--primary); }
+        .nav-btn svg { width: 24px; height: 24px; fill: currentColor; }
+        
+        /* Timer */
+        .timer-fab { position: absolute; top: 16px; right: 16px; background: var(--primary); padding: 8px 16px; border-radius: 24px; font-family: monospace; font-weight: bold; z-index: 50; box-shadow: 0 4px 6px rgba(0,0,0,0.3); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
+
+        /* Chat */
+        .msg { padding: 12px; border-radius: 12px; max-width: 85%; margin-bottom: 12px; word-wrap: break-word; white-space: pre-wrap; font-size: 15px; }
+        .msg.user { background: var(--primary); margin-left: auto; border-bottom-right-radius: 4px; }
+        .msg.bot { background: var(--surface); margin-right: auto; border-bottom-left-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="module">
+        import { h, render } from 'https://unpkg.com/preact@10.22.0?module';
+        import { useState, useEffect, useMemo } from 'https://unpkg.com/preact@10.22.0/hooks/dist/hooks.module.js?module';
+        import htm from 'https://unpkg.com/htm@3.1.1/dist/htm.module.js?module';
+        const html = htm.bind(h);
+
+        // SVG Icons
+        const Icons = {
+            lift: html`<svg viewBox="0 0 24 24"><path d="M20.5 10H19V7c0-1.1-.9-2-2-2h-2V3h-2v2H11V3H9v2H7c-1.1 0-2 .9-2 2v3H3.5c-.8 0-1.5.7-1.5 1.5v1c0 .8.7 1.5 1.5 1.5H5v3c0 1.1.9 2 2 2h2v2h2v-2h2v2h2v-2h2c1.1 0 2-.9 2-2v-3h1.5c.8 0 1.5-.7 1.5-1.5v-1c0-.8-.7-1.5-1.5-1.5z"/></svg>`,
+            plan: html`<svg viewBox="0 0 24 24"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>`,
+            log: html`<svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>`,
+            ai: html`<svg viewBox="0 0 24 24"><path d="M21 11c0-1.66-1.34-3-3-3h-1V6c0-1.66-1.34-3-3-3H10C8.34 3 7 4.34 7 6v2H6c-1.66 0-3 1.34-3 3v2c0 1.66 1.34 3 3 3h1v2c0 1.66 1.34 3 3 3h4c1.66 0 3-1.34 3-3v-2h1c1.66 0 3-1.34 3-3v-2zM9 13c-.83 0-1.5-.67-1.5-1.5S8.17 10 9 10s1.5.67 1.5 1.5S9.83 13 9 13zm6 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`,
+            settings: html`<svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>`,
+            trash: html`<svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`,
+            check: html`<svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`,
+            up: html`<svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;"><path d="M7 14l5-5 5 5z"/></svg>`,
+            down: html`<svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;"><path d="M7 10l5 5 5-5z"/></svg>`
+        };
+
+        const APP_ID = 'perfect-lift-v2';
+        
+        // Firebase Configuration injected directly
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyCFUp7gU8ef2eoz4CypW3yHH2m0nWmqmC0",
+            authDomain: "perfect-lift-3f1a4.firebaseapp.com",
+            projectId: "perfect-lift-3f1a4",
+            storageBucket: "perfect-lift-3f1a4.firebasestorage.app",
+            messagingSenderId: "195351380069",
+            appId: "1:195351380069:web:9fdcecd5420b20ae21c68c"
+        };
+
+        const App = () => {
+            const [tab, setTab] = useState('workout');
+            const [exercises, setExercises] = useState(["Bench Press", "Squat", "Deadlift", "Overhead Press", "Barbell Row"]);
+            const [routines, setRoutines] = useState([]);
+            const [history, setHistory] = useState([]);
+            
+            const [activeWorkout, setActiveWorkout] = useState(null);
+            const [editingRoutine, setEditingRoutine] = useState(null);
+            
+            // Timer
+            const [timer, setTimer] = useState(0);
+            const [targetRest, setTargetRest] = useState(90);
+
+            // Cloud Data
+            const [geminiKey, setGeminiKey] = useState(localStorage.getItem('pl_gemini_key') || '');
+            const [dbRef, setDbRef] = useState(null);
+
+            // Firebase Lazy Loader
+            useEffect(() => {
+                let unsub = () => {};
+                import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js").then(firebaseApp => {
+                    import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js").then(firebaseAuth => {
+                        import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js").then(firebaseFirestore => {
+                            try {
+                                const app = firebaseApp.initializeApp(FIREBASE_CONFIG);
+                                const auth = firebaseAuth.getAuth(app);
+                                const db = firebaseFirestore.getFirestore(app);
+                                firebaseAuth.signInAnonymously(auth);
+                                
+                                firebaseAuth.onAuthStateChanged(auth, user => {
+                                    if(user) {
+                                        const ref = firebaseFirestore.doc(db, 'artifacts', APP_ID, 'users', user.uid, 'data', 'main');
+                                        setDbRef(() => ({ doc: firebaseFirestore.setDoc, ref }));
+                                        unsub = firebaseFirestore.onSnapshot(ref, snap => {
+                                            if(snap.exists()) {
+                                                const d = snap.data();
+                                                if(d.ex) setExercises(d.ex);
+                                                if(d.ro) setRoutines(d.ro);
+                                                if(d.hi) setHistory(d.hi);
+                                            }
+                                        });
+                                    }
+                                });
+                            } catch(e) { console.error("Firebase err", e); }
+                        });
+                    });
+                });
+                return () => unsub();
+            }, []);
+
+            const saveData = (ex, ro, hi) => {
+                setExercises(ex); setRoutines(ro); setHistory(hi);
+                if(dbRef) dbRef.doc(dbRef.ref, { ex, ro, hi }, { merge: true });
+            };
+
+            // Timer Loop
+            useEffect(() => {
+                if(timer <= 0) return;
+                const int = setInterval(() => setTimer(t => t - 1), 1000);
+                if(timer === 1 && navigator.vibrate) navigator.vibrate([300, 100, 300]);
+                return () => clearInterval(int);
+            }, [timer]);
+
+            // Format OpenWeight JSON
+            const exportData = () => {
+                const log = { format: "openweight", version: "1.0", workouts: history.map(w => ({
+                    id: w.date.toString(), date: new Date(w.date).toISOString(), name: w.name,
+                    exercises: w.exercises.map(e => ({
+                        exercise: { name: e.name },
+                        sets: e.sets.map(s => ({ weight: Number(s.w)||0, weightUnit: "lb", reps: Number(s.r)||0, rpe: Number(s.rpe)||null }))
+                    }))
+                }))};
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(new Blob([JSON.stringify(log, null, 2)], {type: 'application/json'}));
+                a.download = `perfect_lift_${Date.now()}.json`;
+                a.click();
+            };
+
+            // Auto-Progression Helper
+            const getLastWeight = (exName) => {
+                for (let w of history) {
+                    for (let e of w.exercises) {
+                        if (e.name === exName && e.sets.length > 0) {
+                            // Find max weight
+                            let max = 0;
+                            for(let s of e.sets) if(s.w > max) max = s.w;
+                            // Add 5 lbs as progression suggestion if weight > 0
+                            return max > 0 ? (Number(max) + 5).toString() : '';
+                        }
+                    }
+                }
+                return '';
+            };
+
+            // --- Render Functions ---
+
+            const renderWorkout = () => {
+                if (!activeWorkout) {
+                    return html`
+                        <div>
+                            <h2 class="font-bold text-lg mb-4">Start Workout</h2>
+                            ${routines.map(r => html`
+                                <div class="card">
+                                    <h3 class="font-bold mb-2">${r.name}</h3>
+                                    <div class="flex gap-2" style="overflow-x:auto;">
+                                        ${r.days.map(d => html`
+                                            <button class="secondary text-sm" style="width:auto; white-space:nowrap;" onClick=${() => {
+                                                setActiveWorkout({
+                                                    name: `${r.name} - ${d.name}`, date: Date.now(),
+                                                    exercises: d.ex.map(e => ({ name: e, sets: [{ w: getLastWeight(e), r: '', rpe: '', c: false }] }))
+                                                });
+                                            }}>${d.name}</button>
+                                        `)}
+                                    </div>
+                                </div>
+                            `)}
+                            <button class="secondary mt-4" onClick=${() => setActiveWorkout({name: 'Custom Workout', date: Date.now(), exercises: []})}>
+                                Start Empty Workout
+                            </button>
+                        </div>
+                    `;
+                }
+
+                return html`
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="font-bold">${activeWorkout.name}</h2>
+                            <button class="success" style="width:auto; padding: 6px 16px;" onClick=${() => {
+                                saveData(exercises, routines, [{...activeWorkout, date: Date.now()}, ...history]);
+                                setActiveWorkout(null);
+                                setTimer(0);
+                            }}>Finish</button>
+                        </div>
+
+                        ${activeWorkout.exercises.map((ex, eIdx) => html`
+                            <div class="card" style="padding: 12px;">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="font-bold text-primary">${ex.name}</h3>
+                                    <button class="danger" onClick=${() => {
+                                        let nw = {...activeWorkout}; nw.exercises.splice(eIdx, 1); setActiveWorkout(nw);
+                                    }}>${Icons.trash}</button>
+                                </div>
+                                <div class="grid-sets text-xs text-muted font-bold" style="margin-bottom:4px;">
+                                    <div style="text-align:center;">SET</div><div>LBS</div><div>REPS</div><div>RPE</div><div style="text-align:center;">✓</div>
+                                </div>
+                                ${ex.sets.map((set, sIdx) => html`
+                                    <div class="grid-sets" style="opacity: ${set.c ? 0.5 : 1};">
+                                        <div class="text-sm font-bold" style="text-align:center; background:var(--surface-light); padding:8px; border-radius:8px;">${sIdx+1}</div>
+                                        <input type="number" placeholder="-" value=${set.w} onInput=${e => {
+                                            let nw = {...activeWorkout}; nw.exercises[eIdx].sets[sIdx].w = e.target.value; setActiveWorkout(nw);
+                                        }}/>
+                                        <input type="number" placeholder="-" value=${set.r} onInput=${e => {
+                                            let nw = {...activeWorkout}; nw.exercises[eIdx].sets[sIdx].r = e.target.value; setActiveWorkout(nw);
+                                        }}/>
+                                        <input type="number" placeholder="-" value=${set.rpe} onInput=${e => {
+                                            let nw = {...activeWorkout}; nw.exercises[eIdx].sets[sIdx].rpe = e.target.value; setActiveWorkout(nw);
+                                        }}/>
+                                        <button class=${set.c ? 'success' : 'secondary'} style="padding:8px;" onClick=${() => {
+                                            let nw = {...activeWorkout}; 
+                                            nw.exercises[eIdx].sets[sIdx].c = !nw.exercises[eIdx].sets[sIdx].c;
+                                            if(nw.exercises[eIdx].sets[sIdx].c) setTimer(targetRest);
+                                            setActiveWorkout(nw);
+                                        }}>${Icons.check}</button>
+                                    </div>
+                                `)}
+                                <button class="ghost text-sm mt-2" onClick=${() => {
+                                    let nw = {...activeWorkout};
+                                    let last = nw.exercises[eIdx].sets[nw.exercises[eIdx].sets.length-1];
+                                    nw.exercises[eIdx].sets.push(last ? {...last, c:false} : {w:'', r:'', rpe:'', c:false});
+                                    setActiveWorkout(nw);
+                                }}>+ Add Set</button>
+                            </div>
+                        `)}
+
+                        <select class="mt-4" onChange=${e => {
+                            if(!e.target.value) return;
+                            let nw = {...activeWorkout};
+                            nw.exercises.push({ name: e.target.value, sets: [{ w: getLastWeight(e.target.value), r: '', rpe: '', c: false }] });
+                            setActiveWorkout(nw);
+                            e.target.value = "";
+                        }}>
+                            <option value="">+ Add Exercise</option>
+                            ${exercises.map(e => html`<option value=${e}>${e}</option>`)}
+                        </select>
+                    </div>
+                `;
+            };
+
+            const renderRoutines = () => {
+                if (editingRoutine) {
+                    return html`
+                        <div>
+                            <button class="ghost mb-2" onClick=${() => setEditingRoutine(null)}>← Back</button>
+                            <input class="font-bold mb-4 text-lg" value=${editingRoutine.name} onInput=${e => setEditingRoutine({...editingRoutine, name: e.target.value})} />
+                            
+                            ${editingRoutine.days.map((d, dIdx) => html`
+                                <div class="card">
+                                    <div class="flex justify-between items-center mb-4 gap-2">
+                                        <input class="font-bold" value=${d.name} onInput=${e => {
+                                            let nr = {...editingRoutine}; nr.days[dIdx].name = e.target.value; setEditingRoutine(nr);
+                                        }} />
+                
