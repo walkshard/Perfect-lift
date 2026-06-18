@@ -1,9 +1,4 @@
-﻿To answer your questions directly:
-1. Connecting the app to your personal Gemini There is no bridge between the Gemini API (which runs inside your app) and your personal Google account. They are completely separate brains. The API cannot see your consumer chat history, and I cannot access your app.
-2. Giving the app "memory" By default, the Gemini API forgets everything the second it replies. To give it memory, the app has to send the entire conversation history back to Google every single time you hit send. I have updated the code to do exactly this. The coach will now remember everything you discussed during that specific session.
-3. Exporting the gym chat I added an "➦ Export Chat" button to the top right of the Coach tab. Tapping it formats your entire back-and-forth conversation into a clean text block and copies it to your clipboard. You can paste it directly into this window so I can pick up right where the app coach left off.
-Here is the updated code. Delete everything in index.html and paste this:
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
    <meta charset="UTF-8">
