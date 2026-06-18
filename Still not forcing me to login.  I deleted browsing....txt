@@ -1,13 +1,3 @@
-﻿I know exactly what is happening, and it is entirely my fault.
-When you asked if the correct file had 279 lines earlier, I incorrectly agreed with you. It does not.
-Because I told you 279 lines was correct, you are currently using an older version of the code that still contains the auth.signInAnonymously() command. That single line of code is instantly regenerating a brand new anonymous user the millisecond you open the webpage, which is why it completely bypasses the login screen even when you use a fresh browser.
-The true, final version with the Login Screen, Plate Calculator, Graphs, and Share Button is exactly 232 lines long (which easily fits within your phone's copy/paste limit).
-Here is how we fix it once and for all:
-1. Go to your index.html on GitHub and tap the edit pencil.
-2. Select All and Delete absolutely everything in the file.
-3. Copy the code block below.
-4. Paste it, ensure line 1 says <!DOCTYPE html>, and hit Commit changes.
-Once Vercel pushes this (about 30 seconds), refresh your app. The signInAnonymously command is completely gone, and you will immediately hit the login screen.
 <!DOCTYPE html>
 <html lang="en">
 <head>
