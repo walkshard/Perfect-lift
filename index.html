@@ -1,43 +1,4 @@
-﻿To sync your data to a Google Sheet without setting up a paid backend server, we will use a Google Apps Script Webhook.
-This method allows each user to paste a unique URL into their app Settings. Whenever they finish a workout, the app will silently beam the data to their personal Google Sheet.
-Step 1: Set up the Google Sheet
-Each user who wants this feature needs to do the following:
-1. Create a new Google Sheet.
-2. Go to Extensions > Apps Script.
-3. Delete any code there and paste this:
-function doPost(e) {
- var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
- var data = JSON.parse(e.postData.contents);
- 
- var date = new Date(data.date).toLocaleString();
- var email = data.email || "Unknown User";
- var workoutName = data.name;
- 
- // Formats the exercises into a readable text block
- var details = "";
- data.exs.forEach(function(ex) {
-   details += ex.name + ":\n";
-   ex.sets.forEach(function(set, i) {
-     if(set.c) {
-       details += "  Set " + (i+1) + ": " + set.w + "lbs x " + set.r + "\n";
-     }
-   });
-   details += "\n";
- });
-
- // Columns: Date | Email | Workout Name | Full Details | Raw JSON Data
- sheet.appendRow([date, email, workoutName, details.trim(), JSON.stringify(data)]);
- 
- return ContentService.createTextOutput("Success");
-}
-
-1. Click Deploy > New deployment.
-2. Set the type to Web app.
-3. Set "Execute as" to Me and "Who has access" to Anyone.
-4. Click Deploy, authorize the permissions, and copy the Web app URL.
-Step 2: Update Your App Code
-Replace your index.html with this updated version. It adds a "Google Sheets Sync" field in the Settings tab and a fire-and-forget fetch request that triggers the exact moment you hit "Save & Close" on a completed workout.
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
    <meta charset="UTF-8">
